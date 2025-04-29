@@ -1,0 +1,4 @@
+data/**/*.pickle filter=lfs diff=lfs merge=lfs -text
+data/**/*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.pickle filter=lfs diff=lfs merge=lfs -text
