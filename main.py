@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
+from datetime import datetime
 import skimage.io
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
@@ -133,7 +134,8 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
-    dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
+    # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
+    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -143,13 +145,31 @@ def main(dataset_path, epochs, n_points, n_rays):
     size = dataset.far - dataset.near
     encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
     model = Model(encoder)
+
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
     print(f'Starting training...')
     for epoch in range(epochs):
         epoch_loss = train(model, dataset, optimizer, n_points)
 
-        print(f'Epoch {epoch} loss: {epoch_loss}')
+        pred_vol = get_sample_slices(model, dataset)  # shape=(Z,H,W), uint8
+
+        ssim_val = tf.image.ssim(pred_vol, ground_truth_volume, max_val=255)
+        psnr_val = tf.image.psnr(pred_vol, ground_truth_volume, max_val=255)
+        m = tf.keras.metrics.MeanSquaredError()
+        m.update_state(ground_truth_volume, pred_vol)
+        mse_vol = m.result().numpy()
+
+        # print(f'Epoch {epoch} loss: {epoch_loss}')
+        print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.2f}  PSNR={psnr_val:.2f}  MSE={mse_vol:.2f}")
+
+        import csv
+        with open('data/out/metrics.csv', 'a', newline='') as f:
+            writer = csv.writer(f)
+            if epoch == 0:
+                writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), ssim_val.numpy().item(), psnr_val.numpy().item(),mse_vol.item(), timestamp])
 
         if epoch % 10 == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
@@ -161,12 +181,11 @@ def main(dataset_path, epochs, n_points, n_rays):
 
             skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
 
-
 if __name__ == '__main__':
-    dataset_path = 'data/ct_data/chest_50.pickle'
-    # dataset_path = 'data/ct_data/abdomen_50.pickle'
+    # dataset_path = 'data/ct_data/chest_50.pickle'
+    dataset_path = 'data/ct_data/abdomen_50.pickle'
     # dataset_path = 'data/ct_data/foot_50.pickle'
-    # dataset_path = 'data/ct_data/jaw_50.pickle'
+    # dataset_path = 'data/ct_data/jaw_50.pickle'2
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # a clear shape after 10 epochs
