@@ -164,12 +164,12 @@ def main(dataset_path, epochs, n_points, n_rays):
         print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.2f}  PSNR={psnr_val:.2f}  MSE={mse_vol:.2f}")
 
         import csv
-        with open('data/out/foot_50/metrics_foot.csv', 'a', newline='') as f:
+        with open('data/out/metrics.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             if epoch == 0:
                 writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), ssim_val.numpy().item(), psnr_val.numpy().item(),mse_vol.item(), timestamp])
+            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(),3), round(psnr_val.numpy().item(),3),round(mse_vol.item(),3), timestamp])
 
         if epoch % 10 == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
