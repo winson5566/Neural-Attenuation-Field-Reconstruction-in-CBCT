@@ -6,7 +6,7 @@ from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
-from model3 import FourierFeatureEncoder, build_transformer_model
+from model3 import FourierFeatureEncoder, ChunkTransformer
 import skimage.io
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
@@ -154,7 +154,12 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     # Transformer Encoder
     encoder = FourierFeatureEncoder(num_frequencies=10, max_freq_log2=4)
-    model = build_transformer_model(encoder)
+    model = ChunkTransformer(encoder,
+                             chunk_size=2048,  # 你可以更小
+                             embed_dim=64,
+                             num_heads=4,
+                             ff_dim=128,
+                             num_layers=4)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
