@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import model2 as Model2
+import model3 as Model3
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
@@ -148,7 +149,11 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     # model = Model(encoder)
 
+    # Residual Block
     model = Model2(encoder)
+
+    # Transformer Encoder
+    # model = Model3.TransformerModel(encoder)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
