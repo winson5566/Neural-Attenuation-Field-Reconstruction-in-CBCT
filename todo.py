@@ -272,13 +272,12 @@ if __name__ == "__main__":
     far = np.float64(1.1)
     # n_points = np.int32(10)
     # small test
-    points, scalars, norms = rays_to_points(rays, 10, near, far)
+    points, scalars = rays_to_points(rays, 10, near, far)
     #NOTE: there is randomness in the ray generation so you won't get the exact values shown
     # 射线采样有随机性，不必追求输出值逐一相同
     print("rays_to_points output:")
     print(points)
     print(scalars)
-    print(norms)
 
     attenuations = tf.convert_to_tensor(np.array([[0.5, 0.3, 0.1]]), dtype=tf.float32)
     distances = tf.convert_to_tensor(np.array([0.9, 1.0, 1.1]), dtype=tf.float32)
