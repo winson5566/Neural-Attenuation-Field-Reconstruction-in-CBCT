@@ -6,7 +6,7 @@ from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
-from model3 import FourierFeatureEncoder, TransformerModel
+from model3 import FourierFeatureEncoder, build_transformer_model
 import skimage.io
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
@@ -136,8 +136,8 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
+    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
     # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
-    dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -154,7 +154,7 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     # Transformer Encoder
     encoder = FourierFeatureEncoder(num_frequencies=10, max_freq_log2=4)
-    model = TransformerModel(encoder)
+    model = build_transformer_model(encoder)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 

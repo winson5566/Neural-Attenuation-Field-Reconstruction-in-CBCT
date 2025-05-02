@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 # -----------------------------
-# Fourier Feature Positional Encoder
+# Fourier Positional Encoding
 # -----------------------------
 class FourierFeatureEncoder(tf.keras.layers.Layer):
     def __init__(self, num_frequencies=10, max_freq_log2=4, include_input=True):
@@ -12,65 +12,75 @@ class FourierFeatureEncoder(tf.keras.layers.Layer):
         self.freq_bands = 2.0 ** tf.linspace(0.0, max_freq_log2, num_frequencies)
 
     def call(self, inputs):
-        inputs = tf.cast(inputs, tf.float32)  # shape: (N, 3)
-        embed = []
-        for freq in self.freq_bands:
-            embed.append(tf.sin(freq * inputs))
-            embed.append(tf.cos(freq * inputs))
+        inputs = tf.cast(inputs, tf.float32)
+        freq_bands = tf.reshape(self.freq_bands, (1, 1, -1))
+        inputs_exp = tf.expand_dims(inputs, -1)
+        scaled = 2.0 * np.pi * inputs_exp * freq_bands
 
+        sin_feat = tf.sin(scaled)
+        cos_feat = tf.cos(scaled)
+
+        sin_feat = tf.reshape(sin_feat, (tf.shape(inputs)[0], -1))
+        cos_feat = tf.reshape(cos_feat, (tf.shape(inputs)[0], -1))
+
+        out = tf.concat([sin_feat, cos_feat], axis=-1)
         if self.include_input:
-            embed = [inputs] + embed
-
-        return tf.concat(embed, axis=-1)  # shape: (N, D)
+            out = tf.concat([inputs, out], axis=-1)
+        return out
 
     def get_output_dim(self):
-        return (1 + 2 * self.num_frequencies) * 3 if self.include_input else (2 * self.num_frequencies) * 3
+        return (1 + 2 * self.num_frequencies) * 3 if self.include_input else 2 * self.num_frequencies * 3
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.get_output_dim())
 
 # -----------------------------
-# Transformer Encoder Block
+# Transformer Encoder Block (functional)
 # -----------------------------
-class TransformerEncoderBlock(tf.keras.layers.Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
-        super().__init__()
-        self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
-        self.ffn = tf.keras.Sequential([
-            tf.keras.layers.Dense(ff_dim, activation='relu'),
-            tf.keras.layers.Dense(embed_dim),
-        ])
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
+def transformer_encoder(inputs, embed_dim, num_heads, ff_dim, dropout=0.1):
+    attn_output = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)(inputs, inputs)
+    x = tf.keras.layers.Add()([inputs, attn_output])
+    x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
 
-    def call(self, inputs, training=False):
-        attn_output = self.att(inputs, inputs)
-        out1 = self.layernorm1(inputs + self.dropout1(attn_output, training=training))
-        ffn_output = self.ffn(out1)
-        return self.layernorm2(out1 + self.dropout2(ffn_output, training=training))
+    ffn = tf.keras.Sequential([
+        tf.keras.layers.Dense(ff_dim, activation='relu'),
+        tf.keras.layers.Dense(embed_dim),
+    ])
+    ffn_output = ffn(x)
+    x = tf.keras.layers.Add()([x, ffn_output])
+    x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+    return x
 
 # -----------------------------
-# Full Transformer Model
+# Build Transformer Model
 # -----------------------------
-class TransformerModel(tf.keras.layers.Layer):
-    def __init__(self, encoder, embed_dim=64, num_heads=4, ff_dim=128, num_layers=4, out_dim=1):
-        super().__init__()
-        self.encoder = encoder
-        self.embed_dim = embed_dim
+def build_transformer_model(encoder,
+                             embed_dim=64,
+                             num_heads=4,
+                             ff_dim=128,
+                             num_layers=4,
+                             out_dim=1):
+    input_xyz = tf.keras.Input(shape=(3,), name="xyz")
 
-        self.input_proj = tf.keras.layers.Dense(embed_dim)
-        self.transformer_blocks = [
-            TransformerEncoderBlock(embed_dim, num_heads, ff_dim)
-            for _ in range(num_layers)
-        ]
-        self.output_layer = tf.keras.layers.Dense(out_dim)
+    # 1) 编码 + 投影
+    x = encoder(input_xyz)                          # (N, D_enc)
+    x = tf.keras.layers.Lambda(lambda t: t)(x)      # 固定 shape
+    x = tf.keras.layers.Dense(embed_dim)(x)         # (N, embed_dim)
 
-    def call(self, x, training=False):
-        x = self.encoder(x)                     # shape: (N, D_enc)
-        x = self.input_proj(x)                  # shape: (N, embed_dim)
-        x = tf.expand_dims(x, axis=0)           # shape: (1, N, embed_dim)
+    # 2) 添加 batch 维（seq_len=N, batch=1）
+    x = tf.keras.layers.Lambda(lambda t: tf.expand_dims(t, axis=0))(x)  # (1, N, embed_dim)
 
-        for block in self.transformer_blocks:
-            x = block(x, training=training)
+    # 3) 多层 Transformer Encoder
+    for _ in range(num_layers):
+        x = transformer_encoder(x, embed_dim, num_heads, ff_dim)        # (1, N, embed_dim)
 
-        x = tf.squeeze(x, axis=0)               # shape: (N, embed_dim)
-        return self.output_layer(x)             # shape: (N, 1)
+    # 4) 去掉 batch 维
+    x = tf.keras.layers.Lambda(lambda t: tf.squeeze(t, axis=0))(x)      # (N, embed_dim)
+
+    # 5) 回归头
+    output = tf.keras.layers.Dense(out_dim)(x)       # (N, 1)
+
+    return tf.keras.Model(inputs=input_xyz,
+                          outputs=output,
+                          name="FourierTransformerModel")
+
