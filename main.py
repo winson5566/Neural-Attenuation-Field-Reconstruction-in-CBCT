@@ -150,11 +150,11 @@ def main(dataset_path, epochs, n_points, n_rays):
     # model = Model(encoder)
 
     # Residual Block
-    model = Model2(encoder)
+    # model = Model2(encoder)
 
     # Transformer Encoder
-    # encoder = FourierFeatureEncoder(num_frequencies=10, max_freq_log2=4)
-    # model = Model3.TransformerModel(encoder)
+    encoder = FourierFeatureEncoder(num_frequencies=10, max_freq_log2=4)
+    model = TransformerModel(encoder)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
