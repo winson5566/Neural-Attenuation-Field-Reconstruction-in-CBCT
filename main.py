@@ -1,13 +1,12 @@
 import os
 import numpy as np
 import tensorflow as tf
-import model2 as Model2
-import model3 as Model3
+from model2 import Model2
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
-from fourier_transformer_model import FourierFeatureEncoder, TransformerModel
+from model3 import FourierFeatureEncoder, TransformerModel
 import skimage.io
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
@@ -193,10 +192,10 @@ def main(dataset_path, epochs, n_points, n_rays):
             skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
 
 if __name__ == '__main__':
-    # dataset_path = 'data/ct_data/chest_50.pickle'
+    dataset_path = 'data/ct_data/chest_50.pickle'
     # dataset_path = 'data/ct_data/abdomen_50.pickle'
     # dataset_path = 'data/ct_data/foot_50.pickle'
-    dataset_path = 'data/ct_data/jaw_50.pickle'
+    # dataset_path = 'data/ct_data/jaw_50.pickle'
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # a clear shape after 10 epochs

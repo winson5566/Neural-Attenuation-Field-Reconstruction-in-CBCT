@@ -6,11 +6,16 @@ class ResidualDenseBlock(tf.keras.layers.Layer):
         super().__init__()
         self.fc1 = tf.keras.layers.Dense(dim, activation='relu')
         self.fc2 = tf.keras.layers.Dense(dim)
+        self.project = tf.keras.layers.Dense(dim)  # 用于调整 residual 的维度
 
     def call(self, x):
         residual = x
         out = self.fc1(x)
         out = self.fc2(out)
+        # 保证 residual 和 out 的形状相同
+        if residual.shape[-1] != out.shape[-1]:
+            residual = self.project(residual)
+
         return tf.nn.relu(out + residual)
 
 # Model 2 with Residual Connections
