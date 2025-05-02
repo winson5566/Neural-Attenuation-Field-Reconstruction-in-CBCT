@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+import model2 as Model2
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
@@ -144,7 +145,10 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     size = dataset.far - dataset.near
     encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
-    model = Model(encoder)
+
+    # model = Model(encoder)
+
+    model = Model2(encoder)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
