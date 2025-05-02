@@ -6,7 +6,6 @@ from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
-from model3 import FourierFeatureEncoder, ChunkTransformer
 import skimage.io
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
@@ -150,18 +149,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     # model = Model(encoder)
 
     # Residual Block
-    # model = Model2(encoder)
-
-    # Transformer Encoder
-    encoder = FourierFeatureEncoder(num_frequencies=6, max_freq_log2=3)
-    model = ChunkTransformer(encoder,
-                             chunk_size=1024,
-                             embed_dim=32,
-                             num_heads=2,
-                             ff_dim=64,
-                             num_layers=2)
-    # 预热
-    model(tf.random.uniform((8192, 3)))
+    model = Model2(encoder)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -199,9 +187,9 @@ def main(dataset_path, epochs, n_points, n_rays):
             skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
 
 if __name__ == '__main__':
-    dataset_path = 'data/ct_data/chest_50.pickle'
+    # dataset_path = 'data/ct_data/chest_50.pickle'
     # dataset_path = 'data/ct_data/abdomen_50.pickle'
-    # dataset_path = 'data/ct_data/foot_50.pickle'
+    dataset_path = 'data/ct_data/foot_50.pickle'
     # dataset_path = 'data/ct_data/jaw_50.pickle'
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
