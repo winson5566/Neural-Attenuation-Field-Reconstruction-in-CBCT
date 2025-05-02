@@ -135,7 +135,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
     # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
-    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
+    dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -164,7 +164,7 @@ def main(dataset_path, epochs, n_points, n_rays):
         print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.2f}  PSNR={psnr_val:.2f}  MSE={mse_vol:.2f}")
 
         import csv
-        with open('data/out/metrics.csv', 'a', newline='') as f:
+        with open('data/out/foot_50/metrics_foot.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             if epoch == 0:
                 writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
@@ -183,9 +183,9 @@ def main(dataset_path, epochs, n_points, n_rays):
 
 if __name__ == '__main__':
     # dataset_path = 'data/ct_data/chest_50.pickle'
-    dataset_path = 'data/ct_data/abdomen_50.pickle'
+    # dataset_path = 'data/ct_data/abdomen_50.pickle'
     # dataset_path = 'data/ct_data/foot_50.pickle'
-    # dataset_path = 'data/ct_data/jaw_50.pickle'2
+    dataset_path = 'data/ct_data/jaw_50.pickle'
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # a clear shape after 10 epochs
