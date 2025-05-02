@@ -153,13 +153,15 @@ def main(dataset_path, epochs, n_points, n_rays):
     # model = Model2(encoder)
 
     # Transformer Encoder
-    encoder = FourierFeatureEncoder(num_frequencies=10, max_freq_log2=4)
+    encoder = FourierFeatureEncoder(num_frequencies=6, max_freq_log2=3)
     model = ChunkTransformer(encoder,
-                             chunk_size=2048,  # 你可以更小
-                             embed_dim=64,
-                             num_heads=4,
-                             ff_dim=128,
-                             num_layers=4)
+                             chunk_size=1024,
+                             embed_dim=32,
+                             num_heads=2,
+                             ff_dim=64,
+                             num_layers=2)
+    # 预热
+    model(tf.random.uniform((8192, 3)))
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
