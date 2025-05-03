@@ -1,15 +1,35 @@
 import tensorflow as tf
 
-# Unet
-class ConvBlock(tf.keras.layers.Layer):
-    def __init__(self, filters):
+# CBAM
+class CBAM(tf.keras.layers.Layer):
+    def __init__(self, channels, reduction=8, kernel_size=7):
         super().__init__()
-        self.conv1 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same', activation='relu')
-        self.conv2 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same', activation='relu')
+        # 通道注意力（SE 模块）
+        self.global_avg = tf.keras.layers.GlobalAveragePooling2D()
+        self.global_max = tf.keras.layers.GlobalMaxPooling2D()
+        self.fc1 = tf.keras.layers.Dense(channels // reduction, activation='relu')
+        self.fc2 = tf.keras.layers.Dense(channels, activation='sigmoid')
+
+        # 空间注意力
+        self.conv_spatial = tf.keras.layers.Conv2D(
+            filters=1, kernel_size=kernel_size, padding='same', activation='sigmoid'
+        )
 
     def call(self, x):
-        x = self.conv1(x)
-        return self.conv2(x)
+        # ----- Channel Attention -----
+        avg_pool = self.global_avg(x)
+        max_pool = self.global_max(x)
+        avg_out = self.fc2(self.fc1(avg_pool))
+        max_out = self.fc2(self.fc1(max_pool))
+        scale = tf.reshape(avg_out + max_out, (-1, 1, 1, tf.shape(x)[-1]))
+        x = x * scale
+
+        # ----- Spatial Attention -----
+        avg_pool = tf.reduce_mean(x, axis=-1, keepdims=True)
+        max_pool = tf.reduce_max(x, axis=-1, keepdims=True)
+        concat = tf.concat([avg_pool, max_pool], axis=-1)  # [B,H,W,2]
+        spatial = self.conv_spatial(concat)
+        return x * spatial
 
 class DownSample(tf.keras.layers.Layer):
     def __init__(self, filters):

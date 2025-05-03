@@ -1,15 +1,19 @@
 import tensorflow as tf
 
-# Unet
-class ConvBlock(tf.keras.layers.Layer):
-    def __init__(self, filters):
+# SEB
+class SEBlock(tf.keras.layers.Layer):
+    def __init__(self, channels, reduction=8):
         super().__init__()
-        self.conv1 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same', activation='relu')
-        self.conv2 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same', activation='relu')
+        self.pool = tf.keras.layers.GlobalAveragePooling2D()
+        self.fc1 = tf.keras.layers.Dense(channels // reduction, activation='relu')
+        self.fc2 = tf.keras.layers.Dense(channels, activation='sigmoid')
 
     def call(self, x):
-        x = self.conv1(x)
-        return self.conv2(x)
+        w = self.pool(x)  # shape [B, C]
+        w = self.fc1(w)
+        w = self.fc2(w)
+        w = tf.reshape(w, (-1, 1, 1, tf.shape(x)[-1]))  # shape [B,1,1,C]
+        return x * w
 
 class DownSample(tf.keras.layers.Layer):
     def __init__(self, filters):

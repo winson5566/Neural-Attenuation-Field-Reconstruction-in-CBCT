@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-# Residual Dense Block
 class ResidualDenseBlock(tf.keras.layers.Layer):
     def __init__(self, dim):
         super().__init__()
