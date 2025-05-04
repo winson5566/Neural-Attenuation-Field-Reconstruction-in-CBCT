@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-# SEB
 class SEBlock(tf.keras.layers.Layer):
     def __init__(self, channels, reduction=8):
         super().__init__()
@@ -14,6 +13,24 @@ class SEBlock(tf.keras.layers.Layer):
         w = self.fc2(w)
         w = tf.reshape(w, (-1, 1, 1, tf.shape(x)[-1]))  # shape [B,1,1,C]
         return x * w
+
+class ConvBlock(tf.keras.layers.Layer):
+    def __init__(self, filters):
+        super().__init__()
+        self.conv1 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same', activation='relu')
+        self.conv2 = tf.keras.layers.Conv2D(filters, kernel_size=3, padding='same')
+        self.se = SEBlock(filters)
+        self.activation = tf.keras.layers.ReLU()
+        self.project = tf.keras.layers.Conv2D(filters, kernel_size=1, padding='same')
+
+    def call(self, x):
+        residual = x
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.se(x)
+        if residual.shape[-1] != x.shape[-1]:
+            residual = self.project(residual)
+        return self.activation(x + residual)
 
 class DownSample(tf.keras.layers.Layer):
     def __init__(self, filters):
@@ -63,7 +80,7 @@ class RADUNet(tf.keras.Model):
         x = self.decoder_final(u1)
         return tf.clip_by_value(x, 0.0, 1.0)  # 或者 return x 后在 loss 中 clip
 
-class Model3(tf.keras.layers.Layer):
+class Model4(tf.keras.layers.Layer):
     def __init__(self, encoder, n_points=192, n_rays=2048, base_filters=32):
         super().__init__()
         self.encoder = encoder

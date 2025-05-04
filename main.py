@@ -3,6 +3,8 @@ import numpy as np
 import tensorflow as tf
 from model2 import Model2
 from model3 import Model3
+from model4 import Model4
+from model5 import Model5
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
@@ -151,7 +153,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     # Residual Block
     # model = Model2(encoder)
 
-    model = Model3(encoder, n_points=192, n_rays=2048)
+    model = Model4(encoder, n_points=192, n_rays=2048)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -168,7 +170,7 @@ def main(dataset_path, epochs, n_points, n_rays):
         mse_vol = m.result().numpy()
 
         # print(f'Epoch {epoch} loss: {epoch_loss}')
-        print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.2f}  PSNR={psnr_val:.2f}  MSE={mse_vol:.2f}")
+        print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.4f}  MSE={mse_vol:.4f}")
 
         import csv
         with open('data/out/metrics.csv', 'a', newline='') as f:
@@ -176,7 +178,7 @@ def main(dataset_path, epochs, n_points, n_rays):
             if epoch == 0:
                 writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(),3), round(psnr_val.numpy().item(),3),round(mse_vol.item(),3), timestamp])
+            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(),4), round(psnr_val.numpy().item(),4),round(mse_vol.item(),4), timestamp])
 
         if epoch % 10 == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
@@ -189,10 +191,10 @@ def main(dataset_path, epochs, n_points, n_rays):
             skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
 
 if __name__ == '__main__':
-    dataset_path = 'data/ct_data/chest_50.pickle'
+    # dataset_path = 'data/ct_data/chest_50.pickle'
     # dataset_path = 'data/ct_data/abdomen_50.pickle'
     # dataset_path = 'data/ct_data/foot_50.pickle'
-    # dataset_path = 'data/ct_data/jaw_50.pickle'
+    dataset_path = 'data/ct_data/jaw_50.pickle'
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # a clear shape after 10 epochs

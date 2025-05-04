@@ -1,5 +1,41 @@
 import tensorflow as tf
 
+class TransformerEncoderBlock(tf.keras.layers.Layer):
+    def __init__(self, dim, num_heads=4, mlp_ratio=4.0):
+        super().__init__()
+        self.norm1 = tf.keras.layers.LayerNormalization()
+        self.attn = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=dim)
+        self.norm2 = tf.keras.layers.LayerNormalization()
+        self.mlp = tf.keras.Sequential([
+            tf.keras.layers.Dense(int(dim * mlp_ratio), activation='gelu'),
+            tf.keras.layers.Dense(dim)
+        ])
+
+    def call(self, x):
+        # x shape: [B, H*W, C]
+        x = x + self.attn(self.norm1(x), self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+
+class TransformerBottleneck(tf.keras.layers.Layer):
+    def __init__(self, dim, num_layers=4, num_heads=4, mlp_ratio=4.0):
+        super().__init__()
+        self.dim = dim
+        self.num_layers = num_layers
+        self.encoders = [
+            TransformerEncoderBlock(dim, num_heads, mlp_ratio)
+            for _ in range(num_layers)
+        ]
+
+    def call(self, x):
+        B, H, W, C = tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(x)[3]
+        x = tf.reshape(x, (B, H * W, C))
+        for layer in self.encoders:
+            x = layer(x)
+        x = tf.reshape(x, (B, H, W, C))
+        return x
+
 # ========== CBAM ==========
 class CBAM(tf.keras.layers.Layer):
     def __init__(self, channels, reduction=8, kernel_size=7):
@@ -78,7 +114,8 @@ class RADUNet(tf.keras.Model):
         self.down1 = DownSample(base_filters * 2)
         self.down2 = DownSample(base_filters * 4)
 
-        self.bottleneck = ConvBlock(base_filters * 8)
+        # 使用 4 层 Transformer 编码器
+        self.bottleneck = TransformerBottleneck(dim=base_filters * 8, num_layers=4, num_heads=4)
 
         self.up2 = UpSample(base_filters * 4)
         self.up1 = UpSample(base_filters * 2)
@@ -96,6 +133,7 @@ class RADUNet(tf.keras.Model):
 
         x = self.decoder_final(u1)
         return tf.clip_by_value(x, 0.0, 1.0)
+
 
 # ========== Model Wrapper ==========
 
