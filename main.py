@@ -174,7 +174,7 @@ def main(dataset_path, epochs, n_points, n_rays):
         print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.4f}  MSE={mse_vol:.4f}")
 
         import csv
-        with open('data/out/metrics.csv', 'a', newline='') as f:
+        with open('data/out/abdomen_50/metrics.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             if epoch == 0:
                 writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
