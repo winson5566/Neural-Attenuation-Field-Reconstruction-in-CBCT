@@ -6,6 +6,7 @@ from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
+from my_model import FreqEncoder
 import skimage.io
 import csv
 import time
@@ -143,6 +144,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
+    # dataset = TIGREDataset(dataset_path, device="cpu", n_rays=n_rays)
     dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
     # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
 
@@ -154,11 +156,11 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     size = dataset.far - dataset.near
 
-    encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
+    # encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
+    # model = Model(encoder)
 
-    model = Model(encoder)
-
-    # model = MyModel(encoder, n_points=192, n_rays=2048)
+    encoder = FreqEncoder(input_dim=3, max_freq_log2=4, N_freqs=10)
+    model = MyModel(encoder, n_points=192, n_rays=2048)
 
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -209,10 +211,10 @@ def main(dataset_path, epochs, n_points, n_rays):
 
 if __name__ == '__main__':
     # dataset_path = 'data/ct_data/chest_50.pickle'
-    # # dataset_path = 'data/ct_data/abdomen_50.pickle'
-    # # dataset_path = 'data/ct_data/foot_50.pickle'
-    # # dataset_path = 'data/ct_data/jaw_50.pickle'
-    #
+    # dataset_path = 'data/ct_data/abdomen_50.pickle'
+    # dataset_path = 'data/ct_data/foot_50.pickle'
+    # dataset_path = 'data/ct_data/jaw_50.pickle'
+
     # # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # # a clear shape after 10 epochs
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
