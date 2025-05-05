@@ -2,7 +2,7 @@ import tifffile
 import napari
 
 # 读入你的多页 TIFF 体
-vol = tifffile.imread('data/out/chest_50/gt.tiff')  # shape = (Z, H, W)
+vol = tifffile.imread('data/out/jaw_50_Baseline/gt.tiff')  # shape = (Z, H, W)
 
 # 启动 Napari 窗口
 viewer = napari.Viewer()

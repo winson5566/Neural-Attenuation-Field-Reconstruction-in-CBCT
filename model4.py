@@ -80,7 +80,7 @@ class RADUNet(tf.keras.Model):
         x = self.decoder_final(u1)
         return tf.clip_by_value(x, 0.0, 1.0)  # 或者 return x 后在 loss 中 clip
 
-class Model4(tf.keras.layers.Layer):
+class ModelNew(tf.keras.layers.Layer):
     def __init__(self, encoder, n_points=192, n_rays=2048, base_filters=32):
         super().__init__()
         self.encoder = encoder

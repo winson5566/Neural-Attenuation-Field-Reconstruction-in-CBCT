@@ -150,6 +150,7 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
     # model = Model(encoder)
+
     # Residual Block
     # model = Model2(encoder)
 
