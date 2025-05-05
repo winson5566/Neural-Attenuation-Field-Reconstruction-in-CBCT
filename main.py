@@ -1,10 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from model2 import Model2
-from model3 import Model3
-from model4 import Model4
-from model5 import Model5
+from my_model import MyModel
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
@@ -149,12 +146,10 @@ def main(dataset_path, epochs, n_points, n_rays):
     size = dataset.far - dataset.near
 
     encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
-    # model = Model(encoder)
 
-    # Residual Block
-    # model = Model2(encoder)
+    model = Model(encoder)
 
-    model = Model4(encoder, n_points=192, n_rays=2048)
+    # model = MyModel(encoder, n_points=192, n_rays=2048)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -174,7 +169,7 @@ def main(dataset_path, epochs, n_points, n_rays):
         print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.4f}  MSE={mse_vol:.4f}")
 
         import csv
-        with open('data/out/abdomen_50/metrics.csv', 'a', newline='') as f:
+        with open('data/out/metrics.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             if epoch == 0:
                 writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
@@ -192,11 +187,11 @@ def main(dataset_path, epochs, n_points, n_rays):
             skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
 
 if __name__ == '__main__':
-    # dataset_path = 'data/ct_data/chest_50.pickle'
+    dataset_path = 'data/ct_data/chest_50.pickle'
     # dataset_path = 'data/ct_data/abdomen_50.pickle'
     # dataset_path = 'data/ct_data/foot_50.pickle'
-    dataset_path = 'data/ct_data/jaw_50.pickle'
+    # dataset_path = 'data/ct_data/jaw_50.pickle'
 
     # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # a clear shape after 10 epochs
-    main(dataset_path, epochs=250, n_points=192, n_rays=2048)
+    main(dataset_path, epochs=1000, n_points=192, n_rays=2048)

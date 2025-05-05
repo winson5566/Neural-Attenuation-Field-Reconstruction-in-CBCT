@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 # —— 1. 列 + 行（记得加上 Aorta）
-columns = ['GT', 'Baseline', 'Ours']
+columns = ['Baseline', 'Ours', 'GT']
 rows    = ['Chest', 'Jaw', 'Foot', 'Abdomen',]
 
 def get_filename(row, col):
