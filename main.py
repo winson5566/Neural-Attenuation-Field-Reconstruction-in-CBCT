@@ -7,6 +7,8 @@ from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
 import skimage.io
+import csv
+import time
 
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
 # You are encouraged to experiment and change them to find something that works better
@@ -130,6 +132,12 @@ def get_sample_slices(model, dataset):
     return imarr
 
 def main(dataset_path, epochs, n_points, n_rays):
+
+    # 1. 准备输出目录
+    dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
+    output_dir = os.path.join('data', 'out', f'{dataset_name}_run')
+    os.makedirs(output_dir, exist_ok=True)
+
     """
     Loads the data, saves a ground truth image, and then creates the model.
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
@@ -141,7 +149,8 @@ def main(dataset_path, epochs, n_points, n_rays):
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
 
-    skimage.io.imsave(f'data/out/gt.tiff', ground_truth_volume)
+    # skimage.io.imsave(f'data/out/gt.tiff', ground_truth_volume)
+    skimage.io.imsave(os.path.join(output_dir, 'gt.tiff'), ground_truth_volume)
 
     size = dataset.far - dataset.near
 
@@ -151,47 +160,64 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     # model = MyModel(encoder, n_points=192, n_rays=2048)
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=0.001,  # 固定 0.001
+        beta_1=0.9,  # 对应论文里的 β₁=0.9
+        beta_2=0.999,  # 对应论文里的 β₂=0.999
+        epsilon=1e-7,  # TensorFlow 默认 epsilon
+        amsgrad=False  # 与原论文不使用 AMSGrad 保持一致
+    )
+
+    # 4. 初始化 CSV
+    csv_path = os.path.join(output_dir, 'metrics.csv')
+    with open(csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr', 'mse', 'timestamp'])
 
     print(f'Starting training...')
     for epoch in range(epochs):
+        epoch_start = time.time()
         epoch_loss = train(model, dataset, optimizer, n_points)
-
-        pred_vol = get_sample_slices(model, dataset)  # shape=(Z,H,W), uint8
-
-        ssim_val = tf.image.ssim(pred_vol, ground_truth_volume, max_val=255)
-        psnr_val = tf.image.psnr(pred_vol, ground_truth_volume, max_val=255)
-        m = tf.keras.metrics.MeanSquaredError()
-        m.update_state(ground_truth_volume, pred_vol)
-        mse_vol = m.result().numpy()
-
-        # print(f'Epoch {epoch} loss: {epoch_loss}')
-        print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.4f}  MSE={mse_vol:.4f}")
-
-        import csv
-        with open('data/out/metrics.csv', 'a', newline='') as f:
-            writer = csv.writer(f)
-            if epoch == 0:
-                writer.writerow(['dataset', 'epoch', 'loss', 'ssim', 'psnr','mse', 'timestamp'])
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(),4), round(psnr_val.numpy().item(),4),round(mse_vol.item(),4), timestamp])
-
+        print(f"Epoch {epoch:04d}, time={time.time() - epoch_start:.2f}s")
         if epoch % 10 == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
-            print(f'Epoch {epoch} SSIM: {tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)}'+ \
-                f' PSNR {tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)}')
 
-            if not os.path.exists('data/out/'):
-                os.mkdir('data/out/')
+            ssim_val = tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)
+            psnr_val = tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)
+            m = tf.keras.metrics.MeanSquaredError()
+            m.update_state(ground_truth_volume, predicted_volume)
+            mse_vol = m.result().numpy()
 
-            skimage.io.imsave(f'data/out/{epoch}.tiff', predicted_volume)
+            # print(f'Epoch {epoch} loss: {epoch_loss}')
+            print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.3f}  MSE={mse_vol:.3f}")
+
+            with open(csv_path, 'a', newline='') as f:
+                writer = csv.writer(f)
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(), 4),
+                                 round(psnr_val.numpy().item(), 4), round(mse_vol.item(), 4), timestamp])
+
+            # print(f'Epoch {epoch} SSIM: {tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)}'+ \
+            #     f' PSNR {tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)}')
+
+            # if not os.path.exists('data/out/'):
+            #     os.mkdir('data/out/')
+
+            skimage.io.imsave(os.path.join(output_dir, f'{epoch:04d}.tiff'), predicted_volume)
 
 if __name__ == '__main__':
-    dataset_path = 'data/ct_data/chest_50.pickle'
-    # dataset_path = 'data/ct_data/abdomen_50.pickle'
-    # dataset_path = 'data/ct_data/foot_50.pickle'
-    # dataset_path = 'data/ct_data/jaw_50.pickle'
+    # dataset_path = 'data/ct_data/chest_50.pickle'
+    # # dataset_path = 'data/ct_data/abdomen_50.pickle'
+    # # dataset_path = 'data/ct_data/foot_50.pickle'
+    # # dataset_path = 'data/ct_data/jaw_50.pickle'
+    #
+    # # 250 epochs is not enough to produce a high quality reconstruction but you should see
+    # # a clear shape after 10 epochs
+    # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
-    # 250 epochs is not enough to produce a high quality reconstruction but you should see
-    # a clear shape after 10 epochs
-    main(dataset_path, epochs=1000, n_points=192, n_rays=2048)
+    main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
