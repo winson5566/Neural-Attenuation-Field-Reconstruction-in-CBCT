@@ -21,7 +21,7 @@ class Model(tf.keras.layers.Layer):
     at that point in 3-dimensional space.
     """
 
-    def __init__(self, encoder, bound=0.2, num_layers=4, hidden_dim=32, skips=[1], out_dim=1,
+    def __init__(self, encoder, bound=0.3, num_layers=4, hidden_dim=32, skips=[2], out_dim=1,
                  last_activation="sigmoid"):
         super(Model, self).__init__()
 
@@ -143,8 +143,8 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
-    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
-    # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
+    # dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
+    dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     # # a clear shape after 10 epochs
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
-    main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/chest_50.pickle', epochs=3010, n_points=192, n_rays=2048)
+    main('data/ct_data/abdomen_50.pickle', epochs=3010, n_points=192, n_rays=2048)
+    main('data/ct_data/foot_50.pickle', epochs=3010, n_points=192, n_rays=2048)
+    main('data/ct_data/jaw_50.pickle', epochs=3010, n_points=192, n_rays=2048)
