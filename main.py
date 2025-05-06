@@ -6,7 +6,6 @@ from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
 from datetime import datetime
-from my_model import FreqEncoder
 import skimage.io
 import csv
 import time

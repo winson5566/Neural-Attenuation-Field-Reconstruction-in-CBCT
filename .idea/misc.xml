@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="COSC440_project_student_release" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="COSC440_project_student_release" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="cosc440_project" project-jdk-type="Python SDK" />
 </project>
