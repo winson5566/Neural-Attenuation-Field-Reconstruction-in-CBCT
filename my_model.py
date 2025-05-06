@@ -81,49 +81,6 @@ class RADUNet(tf.keras.Model):
         x = self.decoder_final(u1)
         return tf.clip_by_value(x, 0.0, 1.0)  # 或者 return x 后在 loss 中 clip
 
-class FreqEncoder(tf.keras.layers.Layer):
-    def __init__(self, input_dim=3, max_freq_log2=4, N_freqs=10,
-                 log_sampling=True, include_input=True):
-        """
-        Fourier Feature Positional Encoding
-        input_dim: coordinate dimension (usually 3 for x,y,z)
-        max_freq_log2: highest frequency is 2^{max_freq_log2}
-        N_freqs: number of frequency bands
-        log_sampling: whether to use log scale for frequency bands
-        include_input: whether to include the raw input
-        """
-        super(FreqEncoder, self).__init__()
-        self.input_dim = input_dim
-        self.include_input = include_input
-
-        if log_sampling:
-            self.freq_bands = 2.0 ** tf.linspace(0.0, max_freq_log2, N_freqs)
-        else:
-            self.freq_bands = tf.linspace(2.0 ** 0.0, 2.0 ** max_freq_log2, N_freqs)
-
-        self.output_dim = 0
-        if self.include_input:
-            self.output_dim += self.input_dim
-        self.output_dim += self.input_dim * N_freqs * 2  # sin + cos
-
-    def call(self, inputs):
-        # inputs: [N, 3]
-        # Normalize to [-1, 1] if needed
-        inputs = tf.cast(inputs, tf.float32)
-
-        out = []
-        if self.include_input:
-            out.append(inputs)
-
-        for freq in self.freq_bands:
-            out.append(tf.sin(inputs * freq))
-            out.append(tf.cos(inputs * freq))
-
-        return tf.concat(out, axis=-1)
-
-    def get_output_dim(self):
-        return self.output_dim
-
 class MyModel(tf.keras.layers.Layer):
     def __init__(self, encoder, n_points=192, n_rays=2048, base_filters=32):
         super().__init__()

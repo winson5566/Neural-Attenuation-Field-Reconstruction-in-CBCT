@@ -155,10 +155,9 @@ def main(dataset_path, epochs, n_points, n_rays):
     size = dataset.far - dataset.near
 
     encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
-    # model = Model(encoder)
+    model = Model(encoder)
 
-    # encoder = FreqEncoder(input_dim=3, max_freq_log2=4, N_freqs=10)
-    model = MyModel(encoder, n_points=192, n_rays=2048)
+    # model = MyModel(encoder, n_points=192, n_rays=2048)
 
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -217,7 +216,7 @@ if __name__ == '__main__':
     # # a clear shape after 10 epochs
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
-    main('data/ct_data/chest_50.pickle', epochs=3010, n_points=192, n_rays=2048)
-    main('data/ct_data/abdomen_50.pickle', epochs=3010, n_points=192, n_rays=2048)
-    main('data/ct_data/foot_50.pickle', epochs=3010, n_points=192, n_rays=2048)
-    main('data/ct_data/jaw_50.pickle', epochs=3010, n_points=192, n_rays=2048)
+    # main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
