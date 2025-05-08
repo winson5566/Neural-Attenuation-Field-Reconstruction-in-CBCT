@@ -216,6 +216,6 @@ if __name__ == '__main__':
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
     # main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
