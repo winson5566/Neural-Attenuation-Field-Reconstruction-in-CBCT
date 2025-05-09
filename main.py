@@ -179,6 +179,7 @@ def main(dataset_path, epochs, n_points, n_rays):
       NAF-RAD-UNet+HashEncoder
       ================================================="""
     # model = MyModel(encoder, n_points=192, n_rays=2048)
+
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
     optimizer = tf.keras.optimizers.Adam(
