@@ -209,7 +209,7 @@ tf.Tensor(
  1.03321439 1.06313688 1.07580807 1.0987646 ], shape=(10,), dtype=float64)
 tf.Tensor([1.00995049], shape=(1,), dtype=float64)
 ray_attenuation output:
-tf.Tensor([[0.14000005]], shape=(1, 1), dtype=float32)
+tf.Tensor([[0.12000003]], shape=(1, 1), dtype=float32)
 get_flattened_position output:
 tf.Tensor([7 7], shape=(2,), dtype=int32)
 tf.Tensor([42 42], shape=(2,), dtype=int32)

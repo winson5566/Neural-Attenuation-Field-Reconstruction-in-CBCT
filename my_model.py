@@ -87,28 +87,24 @@ class MyModel(tf.keras.layers.Layer):
         self.encoder = encoder
         self.n_points = n_points
         self.n_rays = n_rays
-        self.base_filters = base_filters
-        self.feature_projection = tf.keras.layers.Dense(base_filters)  # ⭐️新增
         self.radunet = RADUNet(input_channels=1, output_channels=1, base_filters=base_filters)
 
     def call(self, points):
         features = self.encoder(points)  # [N, D]
         N = tf.shape(features)[0]
+
+        # 如果是 get_sample_slices 的情况（即不是 n_rays * n_points），直接回归推理模式
         expected = self.n_rays * self.n_points
-
-        def inference_mode():
+        if tf.not_equal(N, expected):
+            # 推理模式（e.g. 16384 点 → reshape 成 [H, W, C]）
             sqrt_N = tf.cast(tf.math.sqrt(tf.cast(N, tf.float32)), tf.int32)
-            projected = self.feature_projection(features)  # [N, base_filters]
-            x = tf.reshape(projected, (1, sqrt_N, sqrt_N, self.base_filters))
-            x = self.radunet(x)
-            x = tf.squeeze(x, axis=0)
-            return tf.squeeze(x, axis=-1)
+            x = tf.reshape(features, (1, sqrt_N, sqrt_N, -1))  # e.g. [1,128,128,C]
+            x = self.radunet(x)  # [1,H,W,1]
+            x = tf.squeeze(x, axis=0)  # [H,W,1]
+            return tf.squeeze(x, axis=-1)  # [H,W]
 
-        def training_mode():
-            projected = self.feature_projection(features)  # [N, base_filters]
-            x = tf.reshape(projected, (1, self.n_rays, self.n_points, self.base_filters))  # [1, 2048, 192, 32]
-            x = self.radunet(x)
-            x = tf.squeeze(x, axis=0)
-            return tf.reshape(x, (self.n_rays, self.n_points))
-
-        return tf.cond(tf.not_equal(N, expected), inference_mode, training_mode)
+        # 否则是训练模式，reshape 成射线样本格式
+        x = tf.reshape(features, (1, self.n_rays, self.n_points, -1))  # [1,H,W,C]
+        x = self.radunet(x)  # [1,H,W,1]
+        x = tf.squeeze(x, axis=0)  # [H,W,1]
+        return tf.reshape(x, (self.n_rays, self.n_points))  # [n_rays, n_points]

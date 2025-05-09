@@ -86,56 +86,31 @@ class Model(tf.keras.layers.Layer):
 
         return x
 
-# def train(model, dataset, optimizer, n_points):
-#     """
-#     Simple training loop that iterates through each projection image, samples rays from that image,
-#     sends the points of those rays through the network, computes the predicted attenuation per ray,
-#     computes the loss between the predicted value and the true value, and then updates the network.
-#     """
-#     num_projections = dataset.rays.shape[-1]
-#     total_loss = 0
-#     for i in range(num_projections):
-#         projection, rays = dataset[i]
-#         points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
-#         magnitudes = tf.norm(rays[..., 3:6], axis=-1)
-#         n_rays = points.shape[0]
-#         points = tf.reshape(points, (-1, 3))
-#
-#         with tf.GradientTape() as tape:
-#             attenuation = model(points)
-#             attenuation = tf.reshape(attenuation, (n_rays, -1))
-#             predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
-#             loss = tf.keras.losses.MSE(projection, predicted_attenuation)
-#             total_loss += loss
-#         gradients = tape.gradient(loss, model.trainable_variables)
-#         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-#     return total_loss / num_projections
-
-@tf.function
-def train_step(model, projection, rays, optimizer, n_points, near, far):
-    points, distances = rays_to_points(rays, n_points, near, far)
-    magnitudes = tf.norm(rays[..., 3:6], axis=-1)
-    n_rays = points.shape[0]
-    points = tf.reshape(points, (-1, 3))
-
-    with tf.GradientTape() as tape:
-        attenuation = model(points)
-        attenuation = tf.reshape(attenuation, (n_rays, -1))
-        predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, near, far)
-        loss = tf.keras.losses.MSE(projection, predicted_attenuation)
-
-    gradients = tape.gradient(loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    return loss
-
 def train(model, dataset, optimizer, n_points):
+    """
+    Simple training loop that iterates through each projection image, samples rays from that image,
+    sends the points of those rays through the network, computes the predicted attenuation per ray,
+    computes the loss between the predicted value and the true value, and then updates the network.
+    """
     num_projections = dataset.rays.shape[-1]
     total_loss = 0
     for i in range(num_projections):
         projection, rays = dataset[i]
-        loss = train_step(model, projection, rays, optimizer, n_points, dataset.near, dataset.far)
-        total_loss += loss
+        points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
+        magnitudes = tf.norm(rays[..., 3:6], axis=-1)
+        n_rays = points.shape[0]
+        points = tf.reshape(points, (-1, 3))
+
+        with tf.GradientTape() as tape:
+            attenuation = model(points)
+            attenuation = tf.reshape(attenuation, (n_rays, -1))
+            predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
+            loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+            total_loss += loss
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return total_loss / num_projections
+
 
 def get_sample_slices(model, dataset):
     """
@@ -180,7 +155,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     size = dataset.far - dataset.near
 
     """================================================
-      Encoder
+      NAF baseline model 
       ================================================="""
 
     # 1. Baseline: Multi-Resolution Grid Encoder (as provided in the assignment)
@@ -198,15 +173,12 @@ def main(dataset_path, epochs, n_points, n_rays):
     embeddings = encoder(test_input)
     print("Hash embedding output shape:", embeddings.shape)
 
-    """================================================
-      Model
-      ================================================="""
-    # model = Model(encoder)
+    model = Model(encoder)
 
     """================================================
-      NAF-RAD-UNet
+      NAF-RAD-UNet+HashEncoder
       ================================================="""
-    model = MyModel(encoder, n_points=192, n_rays=2048)
+    # model = MyModel(encoder, n_points=192, n_rays=2048)
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
     optimizer = tf.keras.optimizers.Adam(
@@ -264,7 +236,7 @@ if __name__ == '__main__':
     # # a clear shape after 10 epochs
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
-    main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
