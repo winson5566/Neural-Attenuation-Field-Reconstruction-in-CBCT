@@ -8,11 +8,11 @@ We recommend using [Conda](https://docs.conda.io/en/latest/miniconda.html) to se
 ``` sh
 # Create environment
 
-conda create -n cosc440_project python=3.12 -y
+conda create -n cosc440_project python=3.10 -y
 conda activate cosc440_project
 
 # Install tensorflow
-pip install tensorflow==2.18.1
+pip install tensorflow==2.15.0
 
 # Install other packages
 pip install -r requirements.txt
