@@ -33,9 +33,3 @@ python main.py --config ./config/chest_50.yaml
 *Note: It may take minutes to compile the hash encoder module for the first time.*
 
 The evaluation outputs will be saved in `./data/out` folder.
-
-
-## Acknowledgement
-
-* Hash encoder and code structure are adapted from [torch-ngp](https://github.com/ashawkey/torch-ngp.git).
-* Many thanks to the amazing [TIGRE toolbox](https://github.com/CERN/TIGRE.git).
