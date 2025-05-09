@@ -279,7 +279,7 @@ def ray_attenuation(attenuations, distances, magnitudes, near, far):
     # 对每条射线求和
     ray_attenuations = tf.reduce_sum(weighted_attenuation, axis=1, keepdims=True)  # [n_rays, 1]
 
-    # 根据参考输出，似乎需要将结果乘以 2
+    # 根据参考输出，似乎需要将结果乘以2
     ray_attenuations = ray_attenuations * 2.0
 
     return ray_attenuations
