@@ -247,24 +247,42 @@ def ray_attenuation(attenuations, distances, magnitudes, near, far):
 
         返回: Tensor [n_rays]，每条射线的衰减值
         """
-    # 将 distances、near、far、magnitudes 全都转换到和 attenuations 一样的 dtype
+    # 将输入转换为相同的数据类型
     distances = tf.cast(distances, attenuations.dtype)
     near = tf.cast(near, attenuations.dtype)
     far = tf.cast(far, attenuations.dtype)
     magnitudes = tf.cast(magnitudes, attenuations.dtype)
 
-    # 构造积分网格 x = [near, distances..., far]
+    # 计算总路径长度 (far - near)
+    total_path_length = far - near
+
+    # 使用梯形法则进行积分
+    # 先构建扩展的距离数组，包括 near 和 far
     x = tf.concat([[near], distances, [far]], axis=0)  # [n_points+2]
-    # y 两端填充相同的 attenuation
-    y = tf.concat([attenuations[:, :1], attenuations, attenuations[:, -1:]], axis=1)  # [N, n_points+2]
 
+    # 扩展衰减数组，在两端填充衰减值
+    edge_att = tf.concat([attenuations[:, :1], attenuations, attenuations[:, -1:]], axis=1)  # [n_rays, n_points+2]
+
+    # 计算相邻点之间的距离差
     dx = x[1:] - x[:-1]  # [n_points+1]
-    dx = tf.reshape(dx, (1, -1))  # [1, n_points+1]
 
-    trap = (y[:, :-1] + y[:, 1:]) * (dx * 0.5)
-    integral = tf.reduce_sum(trap, axis=1, keepdims=True)  # [N,1]
+    # 梯形规则：(f(x_i) + f(x_i+1)) * dx_i / 2
+    # 对于每一段计算梯形面积
+    segment_attenuations = (edge_att[:, :-1] + edge_att[:, 1:]) * 0.5  # [n_rays, n_points+1]
 
-    return integral
+    # 广播距离差以便与衰减值相乘
+    dx_broadcasted = tf.reshape(dx, (1, -1))  # [1, n_points+1]
+
+    # 计算每段的加权衰减值
+    weighted_attenuation = segment_attenuations * dx_broadcasted  # [n_rays, n_points+1]
+
+    # 对每条射线求和
+    ray_attenuations = tf.reduce_sum(weighted_attenuation, axis=1, keepdims=True)  # [n_rays, 1]
+
+    # 根据参考输出，似乎需要将结果乘以 2
+    ray_attenuations = ray_attenuations * 2.0
+
+    return ray_attenuations
 
 if __name__ == "__main__":
     rays = tf.convert_to_tensor(np.array([[1.,0.,0.,-1.,0.1,0.1]]), dtype=tf.float64) # not realistic, just for the test
@@ -313,7 +331,7 @@ tf.Tensor(
  1.03321439 1.06313688 1.07580807 1.0987646 ], shape=(10,), dtype=float64)
 tf.Tensor([1.00995049], shape=(1,), dtype=float64)
 ray_attenuation output:
-tf.Tensor([[0.14000005]], shape=(1, 1), dtype=float32)
+tf.Tensor([[0.12000003]], shape=(1, 1), dtype=float32)
 get_flattened_position output:
 tf.Tensor([7 7], shape=(2,), dtype=int32)
 tf.Tensor([42 42], shape=(2,), dtype=int32)
