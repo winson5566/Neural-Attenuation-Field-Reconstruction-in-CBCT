@@ -143,8 +143,8 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
-    # dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
-    dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
+    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
+    # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -155,10 +155,10 @@ def main(dataset_path, epochs, n_points, n_rays):
     size = dataset.far - dataset.near
 
     """================================================
-      NAF baseline model 
+      Encoder
       ================================================="""
 
-    # 1. Baseline: Multi-Resolution Grid Encoder (as provided in the assignment)
+    # 1. Baseline Encoder (as provided in the assignment)
     # encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
 
     # 2. HashEncoder (as used in the reference paper)
@@ -169,16 +169,12 @@ def main(dataset_path, epochs, n_points, n_rays):
         base_resolution=16,
         log2_hashmap_size=19
     )
-    test_input = tf.constant([[0.1, 0.2, 0.3], [0.7, 0.6, 0.8]], dtype=tf.float32)
-    embeddings = encoder(test_input)
-    print("Hash embedding output shape:", embeddings.shape)
-
-    model = Model(encoder)
 
     """================================================
-      NAF-RAD-UNet+HashEncoder
+      Model
       ================================================="""
-    # model = MyModel(encoder, n_points=192, n_rays=2048)
+    # model = Model(encoder)
+    model = MyModel(encoder, n_points=192, n_rays=2048)
 
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -237,7 +233,7 @@ if __name__ == '__main__':
     # # a clear shape after 10 epochs
     # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
 
-    main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
     main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
