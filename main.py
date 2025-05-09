@@ -159,19 +159,19 @@ def main(dataset_path, epochs, n_points, n_rays):
       ================================================="""
 
     # 1. Baseline: Multi-Resolution Grid Encoder (as provided in the assignment)
-    encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
+    # encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
 
     # 2. HashEncoder (as used in the reference paper)
-    # encoder = HashEmbeddingEncoder(
-    #     input_dim=3,
-    #     num_levels=16,
-    #     level_dim=2,
-    #     base_resolution=16,
-    #     log2_hashmap_size=19
-    # )
-    # test_input = tf.constant([[0.1, 0.2, 0.3], [0.7, 0.6, 0.8]], dtype=tf.float32)
-    # embeddings = encoder(test_input)
-    # print("Hash embedding output shape:", embeddings.shape)
+    encoder = HashEmbeddingEncoder(
+        input_dim=3,
+        num_levels=16,
+        level_dim=2,
+        base_resolution=16,
+        log2_hashmap_size=19
+    )
+    test_input = tf.constant([[0.1, 0.2, 0.3], [0.7, 0.6, 0.8]], dtype=tf.float32)
+    embeddings = encoder(test_input)
+    print("Hash embedding output shape:", embeddings.shape)
 
     model = Model(encoder)
 
