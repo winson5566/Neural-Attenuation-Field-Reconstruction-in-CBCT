@@ -16,7 +16,11 @@ pip install tensorflow==2.15.0
 
 # Install other packages
 pip install -r requirements.txt
+
+# Check GPU
+python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
 ```
+
 
 ## Training and evaluation
 
