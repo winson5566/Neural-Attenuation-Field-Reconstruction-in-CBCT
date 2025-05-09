@@ -12,7 +12,7 @@ conda create -n cosc440_project python=3.12 -y
 conda activate cosc440_project
 
 # Install tensorflow
-pip install tensorflow==2.16.2
+pip install tensorflow==2.18.1
 
 # Install other packages
 pip install -r requirements.txt

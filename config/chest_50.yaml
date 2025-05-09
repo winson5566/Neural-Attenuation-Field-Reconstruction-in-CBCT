@@ -1,6 +1,6 @@
 exp:
   expname: chest_50
-  datadir: ./data/ct_data/chest_50.pickle
+  datadir: data/ct_data/chest_50.pickle
   device: cuda # cuda or mps or cpu
 network:
   net_type: RAD-UNet # MLP or RAD-UNet
