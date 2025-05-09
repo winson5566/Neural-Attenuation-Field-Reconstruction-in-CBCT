@@ -10,6 +10,8 @@ from datetime import datetime
 import skimage.io
 import csv
 import time
+import yaml
+import argparse
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
 # You are encouraged to experiment and change them to find something that works better
 # for your architectural change. These should work fine for Step 1.
@@ -132,10 +134,16 @@ def get_sample_slices(model, dataset):
     return imarr
 
 def main(dataset_path, epochs, n_points, n_rays):
+    config = load_config()
+    net_type = config['network']['net_type']
+    encoding_type = config['encoder']['encoding']
+    i_eval = config['log']['i_eval']
+    i_save = config['log']['i_save']
+    device  = config['exp']['device']
 
     # 1. 准备输出目录
     dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
-    output_dir = os.path.join('data', 'out', f'{dataset_name}_run')
+    output_dir = os.path.join('data', 'out', f'{dataset_name}_train')
     os.makedirs(output_dir, exist_ok=True)
 
     """
@@ -143,8 +151,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     Runs for a given number of epochs and number of sample points/sample rays for each projection image training loop.
     Saves a TIFF image of the sample slice output every 10 epochs.
     """
-    dataset = TIGREDataset(dataset_path, device="mps", n_rays=n_rays)
-    # dataset = TIGREDataset(dataset_path, device="cuda", n_rays=n_rays)
+    dataset = TIGREDataset(dataset_path, device=device, n_rays=n_rays)
 
     # need to transpose to get top down view
     ground_truth_volume = (dataset.ground_truth.transpose((2,0,1))*255).astype(np.uint8)
@@ -154,27 +161,27 @@ def main(dataset_path, epochs, n_points, n_rays):
 
     size = dataset.far - dataset.near
 
-    """================================================
-      Encoder
-      ================================================="""
+    # === Choose encoder ===
+    if encoding_type == 'HASH':
+        encoder = HashEmbeddingEncoder(
+            input_dim=3,
+            num_levels=16,
+            level_dim=2,
+            base_resolution=16,
+            log2_hashmap_size=19
+        )
+    elif encoding_type == 'PSNR':
+        encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
+    else:
+        raise NotImplementedError(f"Unknown encoding type: {encoding_type}")
 
-    # 1. Baseline Encoder (as provided in the assignment)
-    # encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
-
-    # 2. HashEncoder (as used in the reference paper)
-    encoder = HashEmbeddingEncoder(
-        input_dim=3,
-        num_levels=16,
-        level_dim=2,
-        base_resolution=16,
-        log2_hashmap_size=19
-    )
-
-    """================================================
-      Model
-      ================================================="""
-    # model = Model(encoder)
-    model = MyModel(encoder, n_points=192, n_rays=2048)
+    # === Choose model ===
+    if net_type == 'MLP':
+        model = Model(encoder)
+    elif net_type == 'RAD-UNet':
+        model = MyModel(encoder, n_points=n_points, n_rays=n_rays)
+    else:
+        raise NotImplementedError(f"Unknown network type: {net_type}")
 
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
@@ -197,7 +204,7 @@ def main(dataset_path, epochs, n_points, n_rays):
         epoch_start = time.time()
         epoch_loss = train(model, dataset, optimizer, n_points)
         print(f"Epoch {epoch:04d}, time={time.time() - epoch_start:.2f}s")
-        if epoch % 10 == 0 and epoch != 0:
+        if epoch % i_eval == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
 
             ssim_val = tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)
@@ -220,8 +227,18 @@ def main(dataset_path, epochs, n_points, n_rays):
 
             # if not os.path.exists('data/out/'):
             #     os.mkdir('data/out/')
-        if epoch % 100 == 0 and epoch != 0:
+        if epoch % i_save == 0 and epoch != 0:
             skimage.io.imsave(os.path.join(output_dir, f'{epoch:04d}.tiff'), predicted_volume)
+
+def load_config():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help='Path to config file')
+    args = parser.parse_args()
+
+    with open(args.config, 'r') as f:
+        config = yaml.safe_load(f)
+
+    return config
 
 if __name__ == '__main__':
     # dataset_path = 'data/ct_data/chest_50.pickle'
@@ -231,9 +248,16 @@ if __name__ == '__main__':
 
     # # 250 epochs is not enough to produce a high quality reconstruction but you should see
     # # a clear shape after 10 epochs
-    # main(dataset_path, epochs=250, n_points=192, n_rays=2048)
-
     # main('data/ct_data/chest_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
-    main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/abdomen_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/foot_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+    # main('data/ct_data/jaw_50.pickle', epochs=1010, n_points=192, n_rays=2048)
+
+    config = load_config()
+    dataset_path = config['exp']['datadir']
+    epochs = config['train']['epoch']
+    n_points = config['train']['n_points']
+    n_rays = config['train']['n_rays']
+
+    main(dataset_path, epochs=epochs, n_points=n_points, n_rays=n_rays)
+
