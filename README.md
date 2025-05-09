@@ -29,7 +29,10 @@ For example, train NAF with `chest_50` dataset:
 ``` sh
 python main.py --config ./config/chest_50.yaml
 ```
-
+or
+``` sh
+nohup python main.py --config ./config/chest_50.yaml > train.log 2>&1 &
+```
 *Note: It may take minutes to compile the hash encoder module for the first time.*
 
 The evaluation outputs will be saved in `./data/out` folder.
