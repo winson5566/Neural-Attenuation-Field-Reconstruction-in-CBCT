@@ -2,10 +2,16 @@ import tensorflow as tf
 
 
 class SEBlock(tf.keras.layers.Layer):
-    def __init__(self, channels, reduction=8):
+    def __init__(self, reduction=8):
         super().__init__()
+        self.reduction = reduction
         self.pool = tf.keras.layers.GlobalAveragePooling2D()
-        self.fc1 = tf.keras.layers.Dense(channels // reduction, activation='relu')
+        self.fc1 = None
+        self.fc2 = None
+
+    def build(self, input_shape):
+        channels = input_shape[-1]
+        self.fc1 = tf.keras.layers.Dense(channels // self.reduction, activation='relu')
         self.fc2 = tf.keras.layers.Dense(channels, activation='sigmoid')
 
     def call(self, x):
@@ -14,6 +20,7 @@ class SEBlock(tf.keras.layers.Layer):
         w = self.fc2(w)
         w = tf.reshape(w, (-1, 1, 1, tf.shape(x)[-1]))  # shape [B,1,1,C]
         return x * w
+
 
 class ConvBlock(tf.keras.layers.Layer):
     def __init__(self, filters):
@@ -92,19 +99,25 @@ class MyModel(tf.keras.layers.Layer):
     def call(self, points):
         features = self.encoder(points)  # [N, D]
         N = tf.shape(features)[0]
-
-        # 如果是 get_sample_slices 的情况（即不是 n_rays * n_points），直接回归推理模式
         expected = self.n_rays * self.n_points
-        if tf.not_equal(N, expected):
-            # 推理模式（e.g. 16384 点 → reshape 成 [H, W, C]）
-            sqrt_N = tf.cast(tf.math.sqrt(tf.cast(N, tf.float32)), tf.int32)
-            x = tf.reshape(features, (1, sqrt_N, sqrt_N, -1))  # e.g. [1,128,128,C]
-            x = self.radunet(x)  # [1,H,W,1]
-            x = tf.squeeze(x, axis=0)  # [H,W,1]
-            return tf.squeeze(x, axis=-1)  # [H,W]
 
-        # 否则是训练模式，reshape 成射线样本格式
-        x = tf.reshape(features, (1, self.n_rays, self.n_points, -1))  # [1,H,W,C]
-        x = self.radunet(x)  # [1,H,W,1]
-        x = tf.squeeze(x, axis=0)  # [H,W,1]
-        return tf.reshape(x, (self.n_rays, self.n_points))  # [n_rays, n_points]
+        def inference_mode():
+            sqrt_N = tf.cast(tf.math.sqrt(tf.cast(N, tf.float32)), tf.int32)
+            x = tf.reshape(features, (1, sqrt_N, sqrt_N, -1))  # [1, H, W, C]
+            x.set_shape([1, None, None, features.shape[-1]])  # 明确 C 维度，哪怕 H/W 是 None
+            x = self.radunet(x)
+            x = tf.squeeze(x, axis=0)  # [H, W, 1]
+            return tf.squeeze(x, axis=-1)  # [H, W]
+
+        def training_mode():
+            x = tf.reshape(features, (1, self.n_rays, self.n_points, -1))  # [1, H, W, C]
+            x = self.radunet(x)  # [1, H, W, 1]
+            x = tf.squeeze(x, axis=0)  # [H, W, 1]
+            return tf.reshape(x, (self.n_rays, self.n_points))  # [n_rays, n_points]
+
+        return tf.cond(
+            tf.not_equal(N, expected),
+            true_fn=inference_mode,
+            false_fn=training_mode
+        )
+
