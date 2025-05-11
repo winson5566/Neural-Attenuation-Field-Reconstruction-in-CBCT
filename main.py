@@ -113,7 +113,7 @@ class Model(tf.keras.layers.Layer):
 #         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 #     return total_loss / num_projections
 
-@tf.function
+@tf.function(reduce_retracing=True)
 def train_step(model, points, distances, magnitudes, projection, optimizer, n_rays, near, far):
     with tf.GradientTape() as tape:
         attenuation = model(points)
@@ -165,7 +165,6 @@ def main(dataset_path, epochs, n_points, n_rays):
     i_eval = config['log']['i_eval']
     i_save = config['log']['i_save']
     device  = config['exp']['device']
-    dtype = config['encoder']['dtype']
 
     # 1. 准备输出目录
     dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
@@ -195,7 +194,7 @@ def main(dataset_path, epochs, n_points, n_rays):
             level_dim=2,
             base_resolution=16,
             log2_hashmap_size=19,
-            dtype=dtype  # 可切换为 float32 以获得更高精度
+            dtype=tf.float32  # 可切换为 float32 以获得更高精度
         )
     elif encoding_type == 'PSNR':
         encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
