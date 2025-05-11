@@ -113,7 +113,7 @@ class Model(tf.keras.layers.Layer):
 #         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 #     return total_loss / num_projections
 
-@tf.function(reduce_retracing=True)
+# @tf.function
 def train_step(model, points, distances, magnitudes, projection, optimizer, n_rays, near, far):
     with tf.GradientTape() as tape:
         attenuation = model(points)
