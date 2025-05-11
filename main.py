@@ -88,30 +88,83 @@ class Model(tf.keras.layers.Layer):
 
         return x
 
-def train(model, dataset, optimizer, n_points):
-    """
-    Simple training loop that iterates through each projection image, samples rays from that image,
-    sends the points of those rays through the network, computes the predicted attenuation per ray,
-    computes the loss between the predicted value and the true value, and then updates the network.
-    """
+# def train(model, dataset, optimizer, n_points):
+#     """
+#     Simple training loop that iterates through each projection image, samples rays from that image,
+#     sends the points of those rays through the network, computes the predicted attenuation per ray,
+#     computes the loss between the predicted value and the true value, and then updates the network.
+#     """
+#     num_projections = dataset.rays.shape[-1]
+#     total_loss = 0
+#     for i in range(num_projections):
+#         projection, rays = dataset[i]
+#         points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
+#         magnitudes = tf.norm(rays[..., 3:6], axis=-1)
+#         n_rays = points.shape[0]
+#         points = tf.reshape(points, (-1, 3))
+#
+#         with tf.GradientTape() as tape:
+#             attenuation = model(points)
+#             attenuation = tf.reshape(attenuation, (n_rays, -1))
+#             predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
+#             loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+#             total_loss += loss
+#         gradients = tape.gradient(loss, model.trainable_variables)
+#         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+#     return total_loss / num_projections
+
+def train(model, dataset, optimizer, n_points, batch_size=4):
     num_projections = dataset.rays.shape[-1]
-    total_loss = 0
-    for i in range(num_projections):
-        projection, rays = dataset[i]
+    total_loss = 0.0
+    n_batches = 0
+
+    for i in range(0, num_projections, batch_size):
+        batch_rays = []
+        batch_projections = []
+        actual_batch_size = 0
+
+        for j in range(i, min(i + batch_size, num_projections)):
+            projection, rays = dataset[j]
+
+            # 忽略空数据
+            if projection is None or rays is None:
+                continue
+
+            projection = tf.reshape(projection, (-1,))  # 强制变成 [n_rays]
+            rays = tf.cast(rays, tf.float32)
+            batch_projections.append(projection)
+            batch_rays.append(rays)
+            actual_batch_size += 1
+
+        if actual_batch_size == 0:
+            continue  # 跳过空 batch
+
+        rays = tf.concat(batch_rays, axis=0)              # [B * n_rays, 6]
+        projections = tf.concat(batch_projections, axis=0)  # [B * n_rays]
+
+        # 保底检查
+        assert rays.shape[0] == projections.shape[0], \
+            f"Shape mismatch! rays={rays.shape}, projections={projections.shape}"
+
         points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
         magnitudes = tf.norm(rays[..., 3:6], axis=-1)
-        n_rays = points.shape[0]
-        points = tf.reshape(points, (-1, 3))
+        n_rays = tf.shape(rays)[0]
+        points = tf.reshape(points, (-1, 3))  # [B * n_rays * n_points, 3]
 
         with tf.GradientTape() as tape:
             attenuation = model(points)
-            attenuation = tf.reshape(attenuation, (n_rays, -1))
-            predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
-            loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+            attenuation = tf.reshape(attenuation, (n_rays, -1))  # [B * n_rays, n_points]
+            predicted = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
+            loss = tf.keras.losses.MeanSquaredError()(projections, predicted)
             total_loss += loss
-        gradients = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    return total_loss / num_projections
+
+        grads = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        n_batches += 1
+
+    return total_loss / tf.cast(n_batches, tf.float32)
+
+
 
 def get_sample_slices(model, dataset):
     """
@@ -202,7 +255,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     print(f'Starting training...')
     for epoch in range(epochs):
         epoch_start = time.time()
-        epoch_loss = train(model, dataset, optimizer, n_points)
+        epoch_loss = train(model, dataset, optimizer, n_points, batch_size=16)
         print(f"Epoch {epoch:04d}, time={time.time() - epoch_start:.2f}s")
         if epoch % i_eval == 0 and epoch != 0:
             predicted_volume = get_sample_slices(model, dataset)
