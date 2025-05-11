@@ -5,7 +5,7 @@ from my_model import MyModel
 from tensorflow import keras
 from geometry import TIGREDataset
 from todo import *
-from hashencoder import *
+from HashGridEncoder import *
 from datetime import datetime
 import skimage.io
 import csv
@@ -88,29 +88,54 @@ class Model(tf.keras.layers.Layer):
 
         return x
 
+# def train(model, dataset, optimizer, n_points):
+#     """
+#     Simple training loop that iterates through each projection image, samples rays from that image,
+#     sends the points of those rays through the network, computes the predicted attenuation per ray,
+#     computes the loss between the predicted value and the true value, and then updates the network.
+#     """
+#     num_projections = dataset.rays.shape[-1]
+#     total_loss = 0
+#     for i in range(num_projections):
+#         projection, rays = dataset[i]
+#         points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
+#         magnitudes = tf.norm(rays[..., 3:6], axis=-1)
+#         n_rays = points.shape[0]
+#         points = tf.reshape(points, (-1, 3))
+#
+#         with tf.GradientTape() as tape:
+#             attenuation = model(points)
+#             attenuation = tf.reshape(attenuation, (n_rays, -1))
+#             predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
+#             loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+#             total_loss += loss
+#         gradients = tape.gradient(loss, model.trainable_variables)
+#         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+#     return total_loss / num_projections
+
+@tf.function
+def train_step(model, points, distances, magnitudes, projection, optimizer, n_rays, near, far):
+    with tf.GradientTape() as tape:
+        attenuation = model(points)
+        attenuation = tf.reshape(attenuation, (n_rays, -1))
+        predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, near, far)
+        loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+    gradients = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    return loss
+
 def train(model, dataset, optimizer, n_points):
-    """
-    Simple training loop that iterates through each projection image, samples rays from that image,
-    sends the points of those rays through the network, computes the predicted attenuation per ray,
-    computes the loss between the predicted value and the true value, and then updates the network.
-    """
     num_projections = dataset.rays.shape[-1]
     total_loss = 0
     for i in range(num_projections):
-        projection, rays = dataset[i]
+        projection, rays = dataset[i]  # eager 运行，绕过 autograph 的 reshape bug
         points, distances = rays_to_points(rays, n_points, dataset.near, dataset.far)
         magnitudes = tf.norm(rays[..., 3:6], axis=-1)
         n_rays = points.shape[0]
         points = tf.reshape(points, (-1, 3))
 
-        with tf.GradientTape() as tape:
-            attenuation = model(points)
-            attenuation = tf.reshape(attenuation, (n_rays, -1))
-            predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, dataset.near, dataset.far)
-            loss = tf.keras.losses.MSE(projection, predicted_attenuation)
-            total_loss += loss
-        gradients = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        loss = train_step(model, points, distances, magnitudes, projection, optimizer, n_rays, dataset.near, dataset.far)
+        total_loss += loss
     return total_loss / num_projections
 
 
@@ -140,6 +165,7 @@ def main(dataset_path, epochs, n_points, n_rays):
     i_eval = config['log']['i_eval']
     i_save = config['log']['i_save']
     device  = config['exp']['device']
+    dtype = config['encoder']['dtype']
 
     # 1. 准备输出目录
     dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
@@ -168,7 +194,8 @@ def main(dataset_path, epochs, n_points, n_rays):
             num_levels=16,
             level_dim=2,
             base_resolution=16,
-            log2_hashmap_size=19
+            log2_hashmap_size=19,
+            dtype=dtype  # 可切换为 float32 以获得更高精度
         )
     elif encoding_type == 'PSNR':
         encoder = PositionEmbeddingEncoder(size, 8, 3, 3)

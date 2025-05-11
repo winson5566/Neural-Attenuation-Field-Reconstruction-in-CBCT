@@ -6,6 +6,7 @@ network:
   net_type: RAD-UNet # MLP or RAD-UNet
 encoder:
   encoding: HASH # PSNR or HASH
+  dtype: tf.float32
 train:
   epoch: 1000
   n_points: 192
