@@ -5,7 +5,7 @@ exp:
 network:
   net_type: RAD-UNet # MLP or RAD-UNet
 encoder:
-  encoding: PSNR # PSNR or HASH
+  encoding: HASH # PSNR or HASH
 train:
   epoch: 1000
   n_points: 192
