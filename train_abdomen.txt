@@ -1,0 +1,103 @@
+nohup: ignoring input
+2025-05-12 19:12:22.054862: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-05-12 19:12:22.825513: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2025-05-12 19:12:24.299961: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1928] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 46712 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 4090, pci bus id: 0000:41:00.0, compute capability: 8.9
+Starting training...
+2025-05-12 19:12:49.357919: W tensorflow/core/grappler/optimizers/loop_optimizer.cc:933] Skipping loop optimization for Merge node with control input: my_model_1/cond/branch_executed/_173
+2025-05-12 19:12:52.547708: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:465] Loaded cuDNN version 8906
+Epoch 0000, time=21.50s
+Epoch 0001, time=4.16s
+Epoch 0002, time=4.41s
+Epoch 0003, time=4.53s
+Epoch 0004, time=4.58s
+Epoch 0005, time=4.57s
+Epoch 0006, time=4.69s
+Epoch 0007, time=4.60s
+Epoch 0008, time=4.76s
+Epoch 0009, time=4.67s
+Epoch 0010, time=4.68s
+Epoch 10  loss=[8.7387416e-06 2.1956371e-06 2.7977812e-06 ... 3.0707990e-06 4.9416699e-06
+ 2.4158557e-05]  SSIM=0.4392  PSNR=17.199  MSE=78.168
+Epoch 0011, time=4.10s
+Epoch 0012, time=4.14s
+Epoch 0013, time=4.07s
+Epoch 0014, time=4.17s
+Epoch 0015, time=4.40s
+Epoch 0016, time=4.03s
+Epoch 0017, time=4.16s
+Epoch 0018, time=4.34s
+Epoch 0019, time=4.07s
+Epoch 0020, time=4.09s
+Epoch 20  loss=[7.6132578e-06 1.7492191e-06 2.0105924e-06 ... 1.8534644e-06 2.8147374e-06
+ 1.6499371e-06]  SSIM=0.5309  PSNR=18.577  MSE=78.713
+Epoch 0021, time=4.13s
+Epoch 0022, time=4.06s
+Epoch 0023, time=4.10s
+Epoch 0024, time=4.07s
+Epoch 0025, time=4.07s
+Epoch 0026, time=4.15s
+Epoch 0027, time=4.16s
+Epoch 0028, time=4.11s
+Epoch 0029, time=4.07s
+Epoch 0030, time=4.13s
+Epoch 30  loss=[2.4678832e-06 1.9507943e-06 1.1772723e-06 ... 5.2289065e-06 1.4987096e-06
+ 3.1332891e-06]  SSIM=0.5712  PSNR=19.450  MSE=77.584
+Epoch 0031, time=4.15s
+Epoch 0032, time=4.02s
+Epoch 0033, time=4.11s
+Epoch 0034, time=4.10s
+Epoch 0035, time=4.08s
+Epoch 0036, time=4.07s
+Epoch 0037, time=4.08s
+Epoch 0038, time=4.18s
+Epoch 0039, time=4.11s
+Epoch 0040, time=4.17s
+Epoch 40  loss=[2.3570692e-06 1.3545188e-06 2.0897710e-06 ... 6.9638816e-07 1.7269235e-06
+ 1.4197973e-06]  SSIM=0.5671  PSNR=17.511  MSE=81.468
+Epoch 0041, time=4.53s
+Epoch 0042, time=4.61s
+Epoch 0043, time=4.63s
+Epoch 0044, time=4.66s
+Epoch 0045, time=6.22s
+Epoch 0046, time=4.67s
+Epoch 0047, time=4.55s
+Epoch 0048, time=4.62s
+Epoch 0049, time=4.47s
+Epoch 0050, time=4.53s
+Epoch 50  loss=[1.5879565e-06 1.5670566e-06 1.0366083e-06 ... 6.2628197e-07 1.2063388e-06
+ 2.5195195e-06]  SSIM=0.5895  PSNR=18.186  MSE=80.662
+Epoch 0051, time=4.24s
+Epoch 0052, time=4.14s
+Epoch 0053, time=4.09s
+Epoch 0054, time=4.14s
+Epoch 0055, time=4.08s
+Epoch 0056, time=4.21s
+Epoch 0057, time=4.18s
+Epoch 0058, time=4.15s
+Epoch 0059, time=4.09s
+Epoch 0060, time=4.15s
+Epoch 60  loss=[9.3768153e-07 7.6421662e-07 1.0042826e-06 ... 5.7707564e-07 6.6910326e-07
+ 1.1205231e-06]  SSIM=0.5979  PSNR=18.103  MSE=80.792
+Epoch 0061, time=4.15s
+Epoch 0062, time=4.09s
+Epoch 0063, time=4.10s
+Epoch 0064, time=4.12s
+Epoch 0065, time=4.13s
+Epoch 0066, time=4.16s
+Epoch 0067, time=4.13s
+Epoch 0068, time=4.11s
+Epoch 0069, time=4.13s
+Epoch 0070, time=4.06s
+Epoch 70  loss=[1.1613250e-06 3.0456631e-06 1.1112478e-06 ... 8.8367568e-07 5.2428811e-07
+ 1.0242647e-06]  SSIM=0.6136  PSNR=18.452  MSE=80.318
+Epoch 0071, time=4.02s
+Epoch 0072, time=4.14s
+Epoch 0073, time=4.19s
+Epoch 0074, time=4.15s
+Epoch 0075, time=4.07s
+Epoch 0076, time=4.03s
+Epoch 0077, time=4.07s
+Epoch 0078, time=4.07s
+Epoch 0079, time=4.03s
+Epoch 0080, time=4.06s
