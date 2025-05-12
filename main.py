@@ -194,9 +194,9 @@ def main(dataset_path, epochs, n_points, n_rays):
         encoder = HashEmbeddingEncoder(
             input_dim=3,
             num_levels=16,
-            level_dim=8,
+            level_dim=4,
             base_resolution=32,
-            log2_hashmap_size=21,
+            log2_hashmap_size=20,
             dtype=tf.float32  # 可切换为 float32 以获得更高精度
         )
     elif encoding_type == 'PSNR':
