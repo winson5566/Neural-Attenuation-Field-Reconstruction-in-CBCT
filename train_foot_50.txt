@@ -1,0 +1,7 @@
+nohup: ignoring input
+2025-05-13 03:16:13.206907: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-05-13 03:16:13.970642: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2025-05-13 03:16:14.965313: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1928] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 46712 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 4090, pci bus id: 0000:23:00.0, compute capability: 8.9
+2025-05-13 03:16:41.891691: W tensorflow/core/grappler/optimizers/loop_optimizer.cc:933] Skipping loop optimization for Merge node with control input: my_model_1/cond/branch_executed/_173
+2025-05-13 03:16:47.993813: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:465] Loaded cuDNN version 8906
