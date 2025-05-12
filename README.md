@@ -33,7 +33,7 @@ For example, train NAF with `chest_50` dataset:
 
 ``` sh
 python main.py --config ./config/abdomen_50.yaml
-python main.py --config ./config/chest_50.yaml
+python main.py --config ./config/foot_50.yaml
 ```
 or
 ``` sh
