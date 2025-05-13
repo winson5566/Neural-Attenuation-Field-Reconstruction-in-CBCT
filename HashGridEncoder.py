@@ -8,7 +8,7 @@ class HashEmbeddingEncoder(tf.keras.layers.Layer):
         self.level_dim = level_dim
         self.base_resolution = base_resolution
         self.hashmap_size = 2 ** log2_hashmap_size
-        self.embedding_dtype = dtype  # ⚠️ 注意：不要用 self.dtype，这会冲突
+        self.embedding_dtype = dtype
 
         self.embeddings = []
         self.resolutions = []

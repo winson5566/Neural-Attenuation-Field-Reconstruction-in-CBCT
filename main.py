@@ -197,7 +197,7 @@ def main(dataset_path, epochs, n_points, n_rays):
             level_dim=4,
             base_resolution=32,
             log2_hashmap_size=20,
-            dtype=tf.float32  # 可切换为 float32 以获得更高精度
+            dtype=tf.float32
         )
     elif encoding_type == 'PSNR':
         encoder = PositionEmbeddingEncoder(size, 8, 3, 3)
@@ -215,11 +215,11 @@ def main(dataset_path, epochs, n_points, n_rays):
     # optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
     optimizer = tf.keras.optimizers.Adam(
-        learning_rate=0.001,  # 固定 0.001
-        beta_1=0.9,  # 对应论文里的 β₁=0.9
-        beta_2=0.999,  # 对应论文里的 β₂=0.999
-        epsilon=1e-7,  # TensorFlow 默认 epsilon
-        amsgrad=False  # 与原论文不使用 AMSGrad 保持一致
+        learning_rate=0.001,
+        beta_1=0.9,
+        beta_2=0.999,
+        epsilon=1e-7,
+        amsgrad=False
     )
 
     # 4. 初始化 CSV
