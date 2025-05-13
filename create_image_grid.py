@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 
-columns_title  = ['NAF baseline model', 'NAF-RAD-UNet (Ours)', 'GT']
+columns_title  = ['MLP (HGPE)', 'SE-RAD-UNet (HashGridEncoder)', 'GT']
 columns_suffix = ['baseline', 'ours', 'gt']
 rows = ['Chest', 'Jaw', 'Foot', 'Abdomen']  # 已加入 Aorta
 
