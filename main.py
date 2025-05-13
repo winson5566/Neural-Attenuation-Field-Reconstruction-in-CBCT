@@ -12,7 +12,6 @@ import csv
 import time
 import yaml
 import argparse
-import threading
 # NOTE: The hyperparameter values in this file are set to similar numbers to the NAF paper.
 # You are encouraged to experiment and change them to find something that works better
 # for your architectural change. These should work fine for Step 1.
@@ -162,27 +161,6 @@ def get_sample_slices(model, dataset):
     imarr = ((imarr / np.max(imarr)) * 255).astype(np.uint8)
     return imarr
 
-def run_validation(epoch, model, dataset, ground_truth_volume, output_dir, csv_path, dataset_path, epoch_loss):
-    predicted_volume = get_sample_slices(model, dataset)
-
-    ssim_val = tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)
-    psnr_val = tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)
-    m = tf.keras.metrics.MeanSquaredError()
-    m.update_state(ground_truth_volume, predicted_volume)
-    mse_vol = m.result().numpy()
-
-    print(f"[Validation] Epoch {epoch}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.3f}  MSE={mse_vol:.3f}")
-
-    with open(csv_path, 'a', newline='') as f:
-        writer = csv.writer(f)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(), 4),
-                         round(psnr_val.numpy().item(), 4), round(mse_vol.item(), 4), timestamp])
-
-    if epoch % i_save == 0:
-        skimage.io.imsave(os.path.join(output_dir, f'{epoch:04d}.tiff'), predicted_volume)
-
-
 def main(dataset_path, epochs, n_points, n_rays):
     config = load_config()
     net_type = config['network']['net_type']
@@ -255,37 +233,31 @@ def main(dataset_path, epochs, n_points, n_rays):
         epoch_start = time.time()
         epoch_loss = train(model, dataset, optimizer, n_points)
         print(f"Epoch {epoch:04d}, time={time.time() - epoch_start:.2f}s")
-        # if epoch % i_eval == 0 and epoch != 0:
-        #     predicted_volume = get_sample_slices(model, dataset)
-        #
-        #     ssim_val = tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)
-        #     psnr_val = tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)
-        #     m = tf.keras.metrics.MeanSquaredError()
-        #     m.update_state(ground_truth_volume, predicted_volume)
-        #     mse_vol = m.result().numpy()
-        #
-        #     # print(f'Epoch {epoch} loss: {epoch_loss}')
-        #     print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.3f}  MSE={mse_vol:.3f}")
-        #
-        #     with open(csv_path, 'a', newline='') as f:
-        #         writer = csv.writer(f)
-        #         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        #         writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(), 4),
-        #                          round(psnr_val.numpy().item(), 4), round(mse_vol.item(), 4), timestamp])
-        #
-        #     # print(f'Epoch {epoch} SSIM: {tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)}'+ \
-        #     #     f' PSNR {tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)}')
-        #
-        #     # if not os.path.exists('data/out/'):
-        #     #     os.mkdir('data/out/')
-        # if epoch % i_save == 0 and epoch != 0:
-        #     skimage.io.imsave(os.path.join(output_dir, f'{epoch:04d}.tiff'), predicted_volume)
         if epoch % i_eval == 0 and epoch != 0:
-            t = threading.Thread(
-                target=run_validation,
-                args=(epoch, model, dataset, ground_truth_volume, output_dir, csv_path, dataset_path, epoch_loss)
-            )
-            t.start()
+            predicted_volume = get_sample_slices(model, dataset)
+
+            ssim_val = tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)
+            psnr_val = tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)
+            m = tf.keras.metrics.MeanSquaredError()
+            m.update_state(ground_truth_volume, predicted_volume)
+            mse_vol = m.result().numpy()
+
+            # print(f'Epoch {epoch} loss: {epoch_loss}')
+            print(f"Epoch {epoch}  loss={epoch_loss}  SSIM={ssim_val:.4f}  PSNR={psnr_val:.3f}  MSE={mse_vol:.3f}")
+
+            with open(csv_path, 'a', newline='') as f:
+                writer = csv.writer(f)
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                writer.writerow([dataset_path, epoch, epoch_loss.numpy(), round(ssim_val.numpy().item(), 4),
+                                 round(psnr_val.numpy().item(), 4), round(mse_vol.item(), 4), timestamp])
+
+            # print(f'Epoch {epoch} SSIM: {tf.image.ssim(predicted_volume, ground_truth_volume, max_val=255)}'+ \
+            #     f' PSNR {tf.image.psnr(predicted_volume, ground_truth_volume, max_val=255)}')
+
+            # if not os.path.exists('data/out/'):
+            #     os.mkdir('data/out/')
+        if epoch % i_save == 0 and epoch != 0:
+            skimage.io.imsave(os.path.join(output_dir, f'{epoch:04d}.tiff'), predicted_volume)
 
 def load_config():
     parser = argparse.ArgumentParser()
