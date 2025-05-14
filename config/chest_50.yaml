@@ -3,9 +3,9 @@ exp:
   datadir: ./data/ct_data/chest_50.pickle
   device: cuda # cuda or mps or cpu
 network:
-  net_type: RAD-UNet # MLP or RAD-UNet
+  net_type: MLP # MLP or RAD-UNet
 encoder:
-  encoding: PSNR # PSNR or HASH
+  encoding: HASH # PSNR or HASH
 train:
   epoch: 1010
   n_points: 192
