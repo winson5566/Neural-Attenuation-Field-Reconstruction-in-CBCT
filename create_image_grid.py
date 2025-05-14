@@ -25,7 +25,7 @@ for i in range(len(rows)):
 
         if os.path.exists(fpath):
             with Image.open(fpath) as img:
-                mid = img.n_frames // 2
+                mid = img.n_frames // 3
                 img.seek(mid)
                 frame = img.convert('L')
                 arr = np.array(frame, dtype=np.float32)
