@@ -192,7 +192,6 @@ def ray_attenuation(attenuations, distances, magnitudes, near, far):
     # Compute weighted sum for the sampled region
     weighted_attenuations = avg_attenuations * delta_distances
 
-    # ✅ 强制转换 magnitudes 为 float32，避免类型冲突
     magnitudes = tf.cast(magnitudes, tf.float32)
 
     # Adjust the calculation to match the expected output
