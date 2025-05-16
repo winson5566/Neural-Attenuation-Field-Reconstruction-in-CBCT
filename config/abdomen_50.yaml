@@ -11,5 +11,5 @@ train:
   n_points: 192
   n_rays: 2048
 log:
-  i_eval: 10  # Epoch for evaluation
+  i_eval: 100  # Epoch for evaluation
   i_save: 1000  # Epoch for saving

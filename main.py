@@ -193,10 +193,10 @@ def main(dataset_path, epochs, n_points, n_rays):
     if encoding_type == 'HASH':
         encoder = HashEmbeddingEncoder(
             input_dim=3,
-            num_levels=16,
+            num_levels=24,
             level_dim=4,
-            base_resolution=32,
-            log2_hashmap_size=20,
+            base_resolution=16,
+            log2_hashmap_size=21,
             dtype=tf.float32
         )
     elif encoding_type == 'PSNR':
