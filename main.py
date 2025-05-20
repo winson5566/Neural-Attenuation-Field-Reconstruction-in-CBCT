@@ -124,8 +124,8 @@ def train_step(model, projection, rays, optimizer, n_points, near, far):
         attenuation = model(points)
         attenuation = tf.reshape(attenuation, (n_rays, -1))
         predicted_attenuation = ray_attenuation(attenuation, distances, magnitudes, near, far)
-        loss = tf.keras.losses.MSE(projection, predicted_attenuation)
-
+        # loss = tf.keras.losses.MSE(projection, predicted_attenuation)
+        loss = tf.keras.losses.MSE(projection, predicted_attenuation) * 2048
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return loss

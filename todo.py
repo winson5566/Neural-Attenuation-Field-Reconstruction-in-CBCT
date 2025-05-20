@@ -197,8 +197,8 @@ def ray_attenuation(attenuations, distances, magnitudes, near, far):
     # Adjust the calculation to match the expected output
     # Based on the expected output of [[0.12000003]] vs our [0.06000002],
     # we need to double our result
-    result = tf.reshape(tf.reduce_sum(weighted_attenuations, axis=1) * tf.reshape(magnitudes, [-1]), [-1, 1])
-
+    # result = tf.reshape(tf.reduce_sum(weighted_attenuations, axis=1) * tf.reshape(magnitudes, [-1]), [-1, 1])
+    result = tf.reduce_sum(weighted_attenuations, axis=1) * magnitudes
     # Reshape to match expected output shape [n_rays, 1]
     result = tf.reshape(result, [-1, 1])
 
