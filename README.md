@@ -1,6 +1,9 @@
 # Architectural Enhancements for Neural Attenuation Field Reconstruction in CBCT
 (COSC440 Deep-Learning Project Report)
 
+📄 **Project Report:** [`Project_Report__Architectural_Enhancements_for_Neural_Attenuation_Field_Reconstruction_in_CBCT.pdf`](./Project_Report__Architectural_Enhancements_for_Neural_Attenuation_Field_Reconstruction_in_CBCT.pdf)
+
+
 ## Setup
 
 We recommend using [Conda](https://docs.conda.io/en/latest/miniconda.html) to set up an environment.
